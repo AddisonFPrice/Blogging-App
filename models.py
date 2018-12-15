@@ -19,6 +19,7 @@ class Post:
             'date_created': self.date_created
         }
 
-    def save_to_db(self):
+    def insert(self):
         Database.insert(collection='posts',
                         data=self.json_data())
+
