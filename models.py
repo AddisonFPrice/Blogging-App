@@ -23,3 +23,9 @@ class Post:
         Database.insert(collection='posts',
                         data=self.json_data())
 
+    @classmethod
+    def from_mongo(cls, post_id):
+        post_data = Database.find_one(collection='posts', query={'_id': post_id})
+        post_object = cls(**post_data)
+        return post_object
+
