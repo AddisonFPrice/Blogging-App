@@ -1,19 +1,21 @@
 from database import Database
+import uuid
+import datetime
 
 # This is our post class. It sets the properties for all the objects and the methods related to the blog post.
 class Post:
-    def __init__(self, blog_id, title, content, author, date, id):
+    def __init__(self, blog_id, title, content, author, date=datetime.datetime.utcnow(), id=None):
         self.blog_id = blog_id
         self.title = title
         self.content = content
         self.author = author
         self.date_created = date
-        self.id = id
+        self.id = uuid.uuid4().hex if id is None else id
 
 # This converts the user's input into JSON data to be inserted into Mongodb
     def json_data(self):
         return {
-            'id': self.id,
+            'post_id': self.id,
             'blog_id': self.blog_id,
             'author': self.author,
             'content': self.content,
@@ -26,10 +28,10 @@ class Post:
         Database.insert(collection='posts',
                         data=self.json_data())
 
-# This method returns data from a single post (hence, .find_one) from mongodb as "post_object"
+# This method returns data from a single post (hence, .find_one) from Mongodb as "post_object"
     @classmethod
-    def from_mongo(cls, post_id):
-        post_data = Database.find_one(collection='posts', query={'_id': post_id})
+    def from_mongo(cls, id):
+        post_data = Database.find_one(collection='posts', query={'_id': id})
         post_object = cls(**post_data)
         return post_object
 

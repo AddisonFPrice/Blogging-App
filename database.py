@@ -6,7 +6,7 @@ class Database:
     DATABASE = None
 
     @staticmethod
-    def connect(self):
+    def connect():
         client = pymongo.MongoClient(Database.URI)
         Database.DATABASE = client['db1']
 
