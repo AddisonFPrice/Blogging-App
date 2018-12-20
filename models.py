@@ -4,13 +4,13 @@ import datetime
 
 # This is our post class. It sets the properties for all the objects and the methods related to the blog post.
 class Post:
-    def __init__(self, blog_id, title, content, author, date=datetime.datetime.utcnow(), id=None):
+    def __init__(self, blog_id, title, content, author, date=datetime.datetime.utcnow(), id=uuid.uuid4().hex):
         self.blog_id = blog_id
         self.title = title
         self.content = content
         self.author = author
         self.date_created = date
-        self.id = uuid.uuid4().hex if id is None else id
+        self.id = id
 
 # This converts the user's input into JSON data to be inserted into Mongodb
     def json_data(self):
@@ -30,8 +30,60 @@ class Post:
 
 # This method returns data from a single post (hence, .find_one) from Mongodb as "post_object"
     @classmethod
-    def from_mongo(cls, id):
+    def get_post(cls, id):
         post_data = Database.find_one(collection='posts', query={'_id': id})
         post_object = cls(**post_data)
         return post_object
+
+    def from_blog(cls, blog_id):
+        blog_data = Database.find(collection='posts', query={'blog_id': blog_id})
+        posts_object = cls(**blog_data)
+        return posts_object
+
+
+
+class Blog:
+    def __init__(self,  author, title, description, blog_id, id=uuid.uuid4().hex):
+        self.author = author
+        self.title = title
+        self.description = description
+        self.blog_id = blog_id
+        self.id = id
+
+    def new_post(self):
+        title = input("Give your Blog post a title: ")
+        content = input("Write something interesting: ")
+        post = Post(blog_id=self.id,
+                    title=title,
+                    content=content,
+                    author=self.author,
+                    date=datetime.datetime.utcnow())
+        post.save_to_mongo()
+
+    def save_post(self):
+        Database.insert(collection='blogs',
+                        data=self.json_data)
+
+    def json_data(self):
+        return{
+            'author':self.author,
+            'title': self.title,
+            'description': self.description,
+            'blog_id': self.blog_id,
+            'id': uuid.uuid4().hex
+        }
+
+    @classmethod
+    def get_posts(cls, blog_id):
+        posts_data = Database.find(collection= 'blogs',
+                      query={'blog_id': blog_id})
+        posts_object = cls(**posts_data)
+        return posts_object
+
+    def get_from_mongo(self):
+        pass
+
+
+
+
 
