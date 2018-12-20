@@ -24,7 +24,7 @@ class Post:
         }
 
 # This method inserts the JSON data created above into Mongodb
-    def insert(self):
+    def save_post(self):
         Database.insert(collection='posts',
                         data=self.json_data())
 
@@ -35,7 +35,8 @@ class Post:
         post_object = cls(**post_data)
         return post_object
 
-    def from_blog(cls, blog_id):
+    @classmethod
+    def get_blog(cls, blog_id):
         blog_data = Database.find(collection='posts', query={'blog_id': blog_id})
         posts_object = cls(**blog_data)
         return posts_object
@@ -58,7 +59,7 @@ class Blog:
                     content=content,
                     author=self.author,
                     date=datetime.datetime.utcnow())
-        post.save_to_mongo()
+        post.save_post()
 
     def save_post(self):
         Database.insert(collection='blogs',
@@ -75,14 +76,17 @@ class Blog:
 
     @classmethod
     def get_posts(cls, blog_id):
-        posts_data = Database.find(collection= 'blogs',
+        posts_data = Database.find(collection='blogs',
                       query={'blog_id': blog_id})
         posts_object = cls(**posts_data)
         return posts_object
 
-    def get_from_mongo(self):
-        pass
 
+    @staticmethod
+    def get_blogs(id):
+        return [Blog for Blog in Database.find(collection='blogs', query={'blog_id': id})]
+
+    
 
 
 
