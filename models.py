@@ -86,8 +86,50 @@ class Blog:
     def get_blogs(id):
         return [Blog for Blog in Database.find(collection='blogs', query={'blog_id': id})]
 
-    
 
+class Menu(object):
+    def __init__(self):
+        self.user_input = input("Enter your author name: ")
+        self.user_blog = None
+        if self._user_has_account():
+            print("Welcome back {}".format(self.user_input))
+        else:
+            self._prompt_user_account()
 
+    def _user_has_account(self):
+        blog = Database.find_one('blogs', {'author': self.user_input})
+        if blog is not None:
+            self.user_blog = blog
+        else:
+            return False
+
+    def _prompt_user_account(self):
+        title = input("Give your Blog a title: ")
+        description = input("Describe what your Blog is abouut: ")
+        blog = Blog(author=self.user_input,
+                    title=title,
+                    description=description,
+                    )
+        blog.save_post()
+
+    def read_or_write(self):
+        use_case = input("would you like to read (R) or Write (W)? ")
+        if use_case == 'R':
+            self._list_blogs()
+            self._view_blog()
+        elif use_case == 'W':
+            self.user_blog.new_post()
+
+    def _list_blogs(self):
+        blogs = Database.find('blogs', {})
+        for blog in blogs:
+            print("ID: {}, Title: {}, Author {}".format(blog['id'], blog['title'], blog['author']))
+
+    def _view_blog(self):
+        blog_of_interest = input("Copy + Paste the blog's ID here: ")
+        blog = Blog.get_posts(blog_of_interest)
+        posts = blog.get_posts()
+        for post in posts:
+            print("Date: {}, title: {}\n\n{}".format(post['created_date'], post['title'], post['content']))
 
 
