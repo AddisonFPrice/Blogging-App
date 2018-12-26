@@ -69,7 +69,7 @@ class Blog:
             'author':self.author,
             'title': self.title,
             'description': self.description,
-            'id': uuid.uuid4().hex
+            '_id': uuid.uuid4().hex
         }
 
     @classmethod
@@ -119,6 +119,8 @@ class Menu(object):
             self._view_blog()
         elif use_case == 'W':
             self.user_blog.new_post()
+        else:
+            print("Thank you for blogging!")
 
     def _list_blogs(self):
         blogs = Database.find('blogs', {})
