@@ -1,10 +1,13 @@
 from models import Post
 from database import Database
+from models import Menu, Post, Blog
 
 Database.connect()
 
-post1 = Post(title="The Rain King", content="He is a king.", author="Addison Price")
+menu = Menu()
 
-print(post1.title, post1.content)
+menu.read_or_write()
+
+
 
 

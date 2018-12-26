@@ -44,11 +44,10 @@ class Post:
 
 
 class Blog:
-    def __init__(self,  author, title, description, blog_id, id=uuid.uuid4().hex):
+    def __init__(self,  author, title, description, id=uuid.uuid4().hex):
         self.author = author
         self.title = title
         self.description = description
-        self.blog_id = blog_id
         self.id = id
 
     def new_post(self):
@@ -70,7 +69,6 @@ class Blog:
             'author':self.author,
             'title': self.title,
             'description': self.description,
-            'blog_id': self.blog_id,
             'id': uuid.uuid4().hex
         }
 
@@ -105,12 +103,14 @@ class Menu(object):
 
     def _prompt_user_account(self):
         title = input("Give your Blog a title: ")
-        description = input("Describe what your Blog is abouut: ")
+        description = input("Describe what your Blog is about: ")
         blog = Blog(author=self.user_input,
                     title=title,
                     description=description,
+                    id=uuid.uuid4().hex
                     )
         blog.save_post()
+        self.user_blog = blog
 
     def read_or_write(self):
         use_case = input("would you like to read (R) or Write (W)? ")
