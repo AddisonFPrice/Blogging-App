@@ -4,18 +4,18 @@ import datetime
 
 # This is our post class. It sets the properties for all the objects and the methods related to the blog post.
 class Post:
-    def __init__(self, blog_id, title, content, author, date=datetime.datetime.utcnow(), id=uuid.uuid4().hex):
+    def __init__(self, blog_id, title, content, author, date_created=datetime.datetime.utcnow(), _id=uuid.uuid4().hex):
         self.blog_id = blog_id
         self.title = title
         self.content = content
         self.author = author
-        self.date_created = date
-        self.id = id
+        self.date_created = date_created
+        self._id = _id
 
 # This converts the user's input into JSON data to be inserted into Mongodb
     def json_data(self):
         return {
-            'post_id': self.id,
+            '_id': self._id,
             'blog_id': self.blog_id,
             'author': self.author,
             'content': self.content,
@@ -44,23 +44,23 @@ class Post:
 
 
 class Blog:
-    def __init__(self,  author, title, description, id=uuid.uuid4().hex):
+    def __init__(self,  author, title, description, _id=uuid.uuid4().hex):
         self.author = author
         self.title = title
         self.description = description
-        self.id = id
+        self._id = _id
 
     def new_post(self):
         title = input("Give your Blog post a title: ")
         content = input("Write something interesting: ")
-        post = Post(blog_id=self.id,
+        post = Post(_id=self._id,
                     title=title,
                     content=content,
                     author=self.author,
-                    date=datetime.datetime.utcnow())
+                    date_created=datetime.datetime.utcnow())
         post.save_post()
 
-    def save_post(self):
+    def save_blog(self):
         Database.insert(collection='blogs',
                         data=self.json_data)
 
@@ -107,9 +107,9 @@ class Menu(object):
         blog = Blog(author=self.user_input,
                     title=title,
                     description=description,
-                    id=uuid.uuid4().hex
+                    _id=uuid.uuid4().hex
                     )
-        blog.save_post()
+        blog.save_blog()
         self.user_blog = blog
 
     def read_or_write(self):
@@ -127,9 +127,8 @@ class Menu(object):
 
     def _view_blog(self):
         blog_of_interest = input("Copy + Paste the blog's ID here: ")
-        blog = Blog.get_posts(blog_of_interest)
-        posts = blog.get_posts()
-        for post in posts:
+        blogs = Blog.get_blogs(blog_of_interest)
+        for post in blogs:
             print("Date: {}, title: {}\n\n{}".format(post['created_date'], post['title'], post['content']))
 
 
