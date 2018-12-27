@@ -97,7 +97,8 @@ class Menu(object):
     def _user_has_account(self):
         blog = Database.find_one('blogs', {'author': self.user_input})
         if blog is not None:
-            self.user_blog = blog
+            self.user_blog = Blog.get_blogs(blog['id'])
+            return True
         else:
             return False
 
