@@ -2,135 +2,139 @@ from database import Database
 import uuid
 import datetime
 
-# This is our post class. It sets the properties for all the objects and the methods related to the blog post.
-class Post:
-    def __init__(self, blog_id, title, content, author, date_created=datetime.datetime.utcnow(), _id=uuid.uuid4().hex):
+class Post(object):
+
+    def __init__(self, blog_id, title, content, author, date=datetime.datetime.utcnow(), id=None):
         self.blog_id = blog_id
         self.title = title
         self.content = content
         self.author = author
-        self.date_created = date_created
-        self._id = _id
+        self.created_date = date
+        self.id = uuid.uuid4().hex if id is None else id
 
-# This converts the user's input into JSON data to be inserted into Mongodb
-    def json_data(self):
+    def save_to_mongo(self):
+        Database.insert(collection='posts',
+                        data=self.json())
+
+    def json(self):
         return {
-            '_id': self._id,
+            'id': self.id,
             'blog_id': self.blog_id,
             'author': self.author,
             'content': self.content,
             'title': self.title,
-            'date_created': self.date_created
+            'created_date': self.created_date
         }
 
-# This method inserts the JSON data created above into Mongodb
-    def save_post(self):
-        Database.insert(collection='posts',
-                        data=self.json_data())
-
-# This method returns data from a single post (hence, .find_one) from Mongodb as "post_object"
     @classmethod
-    def get_post(cls, id):
-        post_data = Database.find_one(collection='posts', query={'_id': id})
-        post_object = cls(**post_data)
-        return post_object
+    def from_mongo(cls, id):
+        post_data = Database.find_one(collection='posts', query={'id': id})
+        return cls(blog_id=post_data['blog_id'],
+                   title=post_data['title'],
+                   content=post_data['content'],
+                   author=post_data['author'],
+                   date=post_data['created_date'],
+                   id=post_data['id'])
 
-    @classmethod
-    def get_blog(cls, blog_id):
-        blog_data = Database.find(collection='posts', query={'blog_id': blog_id})
-        posts_object = cls(**blog_data)
-        return posts_object
+    @staticmethod
+    def from_blog(id):
+        return [post for post in Database.find(collection='posts', query={'blog_id': id})]
 
 
 
-class Blog:
-    def __init__(self,  author, title, description, _id=uuid.uuid4().hex):
+class Blog(object):
+    def __init__(self, author, title, description, id=None):
         self.author = author
         self.title = title
         self.description = description
-        self._id = _id
+        self.id = uuid.uuid4().hex if id is None else id
 
     def new_post(self):
-        title = input("Give your Blog post a title: ")
-        content = input("Write something interesting: ")
-        post = Post(_id=self._id,
+        title = input("Enter post title: ")
+        content = input("Enter post content: ")
+        date = input("Enter post date, or leave blank for today (in format DDMMYYYY): ")
+        if date == "":
+            date = datetime.datetime.utcnow()
+        else:
+            date = datetime.datetime.strptime(date, "%d%m%Y")
+        post = Post(blog_id=self.id,
                     title=title,
                     content=content,
                     author=self.author,
-                    date_created=datetime.datetime.utcnow())
-        post.save_post()
+                    date=date)
+        post.save_to_mongo()
 
-    def save_blog(self):
+    def get_posts(self):
+        return Post.from_blog(self.id)
+
+    def save_to_mongo(self):
         Database.insert(collection='blogs',
-                        data=self.json_data)
+                        data=self.json())
 
-    def json_data(self):
-        return{
-            'author':self.author,
+    def json(self):
+        return {
+            'author': self.author,
             'title': self.title,
             'description': self.description,
-            '_id': uuid.uuid4().hex
+            'id': self.id
         }
 
     @classmethod
-    def get_posts(cls, blog_id):
-        posts_data = Database.find(collection='blogs',
-                      query={'blog_id': blog_id})
-        posts_object = cls(**posts_data)
-        return posts_object
-
-
-    @staticmethod
-    def get_blogs(id):
-        return [Blog for Blog in Database.find(collection='blogs', query={'blog_id': id})]
+    def from_mongo(cls, id):
+        blog_data = Database.find_one(collection='blogs',
+                                      query={'id': id})
+        return cls(author=blog_data['author'],
+                   title=blog_data['title'],
+                   description=blog_data['description'],
+                   id=blog_data['id'])
 
 
 class Menu(object):
     def __init__(self):
-        self.user_input = input("Enter your author name: ")
+        self.user = input("Enter your author name: ")
         self.user_blog = None
         if self._user_has_account():
-            print("Welcome back {}".format(self.user_input))
+            print("Welcome back {}".format(self.user))
         else:
-            self._prompt_user_account()
+            self._prompt_user_for_account()
 
     def _user_has_account(self):
-        blog = Database.find_one('blogs', {'author': self.user_input})
+        blog = Database.find_one('blogs', {'author': self.user})
         if blog is not None:
-            self.user_blog = blog
+            self.user_blog = Blog.from_mongo(blog['id'])
+            return True
         else:
             return False
 
-    def _prompt_user_account(self):
-        title = input("Give your Blog a title: ")
-        description = input("Describe what your Blog is about: ")
-        blog = Blog(author=self.user_input,
+    def _prompt_user_for_account(self):
+        title = input("Enter blog title: ")
+        description = input("Enter blog description: ")
+        blog = Blog(author=self.user,
                     title=title,
-                    description=description,
-                    _id=uuid.uuid4().hex
-                    )
-        blog.save_blog()
+                    description=description)
+        blog.save_to_mongo()
         self.user_blog = blog
 
-    def read_or_write(self):
-        use_case = input("would you like to read (R) or Write (W)? ")
-        if use_case == 'R':
+    def run_menu(self):
+        read_or_write = input("Do you want to read (R) or write (W) blogs? ")
+        if read_or_write == 'R':
             self._list_blogs()
             self._view_blog()
-        elif use_case == 'W':
+            pass
+        elif read_or_write == 'W':
             self.user_blog.new_post()
         else:
             print("Thank you for blogging!")
 
     def _list_blogs(self):
-        blogs = Database.find('blogs', {})
+        blogs = Database.find(collection='blogs',
+                              query={})
         for blog in blogs:
-            print("ID: {}, Title: {}, Author {}".format(blog['id'], blog['title'], blog['author']))
+            print("ID: {}, Title: {}, Author: {}".format(blog['id'], blog['title'], blog['author']))
 
     def _view_blog(self):
-        blog_of_interest = input("Copy + Paste the blog's ID here: ")
-        blogs = Blog.get_blogs(blog_of_interest)
-        for post in blogs:
+        blog_to_see = input("Enter the ID of the blog you'd like to read: ")
+        blog = Blog.from_mongo(blog_to_see)
+        posts = blog.get_posts()
+        for post in posts:
             print("Date: {}, title: {}\n\n{}".format(post['created_date'], post['title'], post['content']))
-
-

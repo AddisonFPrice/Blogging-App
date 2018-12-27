@@ -6,7 +6,7 @@ Database.connect()
 
 menu = Menu()
 
-menu.read_or_write()
+menu.run_menu()
 
 
 
