@@ -4,13 +4,13 @@ import datetime
 
 class Post(object):
 
-    def __init__(self, blog_id, title, content, author, date=datetime.datetime.utcnow(), id=None):
+    def __init__(self, blog_id, title, content, author, created_date=datetime.datetime.utcnow(), _id=None):
         self.blog_id = blog_id
         self.title = title
         self.content = content
         self.author = author
-        self.created_date = date
-        self.id = uuid.uuid4().hex if id is None else id
+        self.created_date = created_date
+        self._id = uuid.uuid4().hex if _id is None else _id
 
     def save_to_mongo(self):
         Database.insert(collection='posts',
@@ -18,7 +18,7 @@ class Post(object):
 
     def json(self):
         return {
-            'id': self.id,
+            '_id': self._id,
             'blog_id': self.blog_id,
             'author': self.author,
             'content': self.content,
@@ -28,13 +28,8 @@ class Post(object):
 
     @classmethod
     def from_mongo(cls, id):
-        post_data = Database.find_one(collection='posts', query={'id': id})
-        return cls(blog_id=post_data['blog_id'],
-                   title=post_data['title'],
-                   content=post_data['content'],
-                   author=post_data['author'],
-                   date=post_data['created_date'],
-                   id=post_data['id'])
+        post_data = Database.find_one(collection='posts', query={'_id': id})
+        return cls(**post_data)
 
     @staticmethod
     def from_blog(id):
@@ -43,11 +38,11 @@ class Post(object):
 
 
 class Blog(object):
-    def __init__(self, author, title, description, id=None):
+    def __init__(self, author, title, description, _id=None):
         self.author = author
         self.title = title
         self.description = description
-        self.id = uuid.uuid4().hex if id is None else id
+        self._id = uuid.uuid4().hex if _id is None else _id
 
     def new_post(self):
         title = input("Enter post title: ")
@@ -57,7 +52,7 @@ class Blog(object):
             date = datetime.datetime.utcnow()
         else:
             date = datetime.datetime.strptime(date, "%d%m%Y")
-        post = Post(blog_id=self.id,
+        post = Post(blog_id=self._id,
                     title=title,
                     content=content,
                     author=self.author,
@@ -65,7 +60,7 @@ class Blog(object):
         post.save_to_mongo()
 
     def get_posts(self):
-        return Post.from_blog(self.id)
+        return Post.from_blog(self._id)
 
     def save_to_mongo(self):
         Database.insert(collection='blogs',
@@ -76,17 +71,14 @@ class Blog(object):
             'author': self.author,
             'title': self.title,
             'description': self.description,
-            'id': self.id
+            '_id': self._id
         }
 
     @classmethod
     def from_mongo(cls, id):
         blog_data = Database.find_one(collection='blogs',
-                                      query={'id': id})
-        return cls(author=blog_data['author'],
-                   title=blog_data['title'],
-                   description=blog_data['description'],
-                   id=blog_data['id'])
+                                      query={'_id': id})
+        return cls(**blog_data)
 
 
 class Menu(object):
@@ -101,7 +93,7 @@ class Menu(object):
     def _user_has_account(self):
         blog = Database.find_one('blogs', {'author': self.user})
         if blog is not None:
-            self.user_blog = Blog.from_mongo(blog['id'])
+            self.user_blog = Blog.from_mongo(blog['_id'])
             return True
         else:
             return False
@@ -130,7 +122,7 @@ class Menu(object):
         blogs = Database.find(collection='blogs',
                               query={})
         for blog in blogs:
-            print("ID: {}, Title: {}, Author: {}".format(blog['id'], blog['title'], blog['author']))
+            print("ID: {}, Title: {}, Author: {}".format(blog['_id'], blog['title'], blog['author']))
 
     def _view_blog(self):
         blog_to_see = input("Enter the ID of the blog you'd like to read: ")
